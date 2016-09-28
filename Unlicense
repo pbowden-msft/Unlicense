@@ -1,0 +1,250 @@
+#!/bin/sh
+#set -x
+
+TOOL_NAME="Microsoft Office 2016 License Removal Tool"
+TOOL_VERSION="1.0"
+
+## Copyright (c) 2016 Microsoft Corp. All rights reserved.
+## Scripts are not supported under any Microsoft standard support program or service. The scripts are provided AS IS without warranty of any kind.
+## Microsoft disclaims all implied warranties including, without limitation, any implied warranties of merchantability or of fitness for a 
+## particular purpose. The entire risk arising out of the use or performance of the scripts and documentation remains with you. In no event shall
+## Microsoft, its authors, or anyone else involved in the creation, production, or delivery of the scripts be liable for any damages whatsoever 
+## (including, without limitation, damages for loss of business profits, business interruption, loss of business information, or other pecuniary 
+## loss) arising out of the use of or inability to use the sample scripts or documentation, even if Microsoft has been advised of the possibility
+## of such damages.
+## Feedback: pbowden@microsoft.com
+
+# Constants
+WORD2016PATH="/Applications/Microsoft Word.app"
+EXCEL2016PATH="/Applications/Microsoft Excel.app"
+POWERPOINT2016PATH="/Applications/Microsoft PowerPoint.app"
+OUTLOOK2016PATH="/Applications/Microsoft Outlook.app"
+SCRIPTPATH=$( cd $(dirname $0) ; pwd -P )
+VOLUMELICENSE="/Library/Preferences/com.microsoft.office.licensingV2.plist"
+O365SUBMAIN="$HOME/Library/Group Containers/UBF8T346G9.Office/com.microsoft.Office365.plist"
+O365SUBBAK1="$HOME/Library/Group Containers/UBF8T346G9.Office/com.microsoft.e0E2OUQxNUY1LTAxOUQtNDQwNS04QkJELTAxQTI5M0JBOTk4O.plist"
+O365SUBBAK2="$HOME/Library/Group Containers/UBF8T346G9.Office/e0E2OUQxNUY1LTAxOUQtNDQwNS04QkJELTAxQTI5M0JBOTk4O"
+
+function ShowUsage {
+# Shows tool usage and parameters
+	echo $TOOL_NAME - $TOOL_VERSION
+	echo "Purpose: Removes current Office 2016 for Mac activation license and returns apps to read-only mode"
+	echo "Usage: Unlicense [--all] [--detectonly] [--o365] [--volume]"
+	echo "Example: Unlicense --o365"
+	echo
+	exit 0
+}
+
+function CheckRunning {
+# Check that all licensed applications are not running
+	OPENAPPS=0
+	WORDRUNSTATE=$(CheckLaunchState "$WORD2016PATH")
+	if [ "$WORDRUNSTATE" == "1" ]; then
+		OPENAPPS=$(($OPENAPPS + 1))
+		echo "ERROR: Word must be closed before license files can be removed."
+	fi
+	EXCELRUNSTATE=$(CheckLaunchState "$EXCEL2016PATH")
+	if [ "$EXCELRUNSTATE" == "1" ]; then
+		OPENAPPS=$(($OPENAPPS + 1))
+		echo "ERROR: Excel must be closed before license files can be removed."
+	fi
+	POWERPOINTRUNSTATE=$(CheckLaunchState "$POWERPOINT2016PATH")
+	if [ "$POWERPOINTRUNSTATE" == "1" ]; then
+		OPENAPPS=$(($OPENAPPS + 1))
+		echo "ERROR: PowerPoint must be closed before license files can be removed."
+	fi
+	OUTLOOKRUNSTATE=$(CheckLaunchState "$OUTLOOK2016PATH")
+	if [ "$OUTLOOKRUNSTATE" == "1" ]; then
+		OPENAPPS=$(($OPENAPPS + 1))
+		echo "ERROR: Outlook must be closed before license files can be removed."
+	fi
+	if [ "$OPENAPPS" != "0" ]; then
+		echo
+		exit 1
+	fi
+}
+
+function CheckLaunchState {
+# Checks to see if a process is running
+	local RUNNING_RESULT=$(ps ax | grep -v grep | grep "$1")
+	if [ "${#RUNNING_RESULT}" -gt 0 ]; then
+		echo "1"
+	else
+		echo "0"
+	fi
+}
+
+function DetectVolumeLicense {
+# Checks to see if a volume license file is present
+	if [ -f "$VOLUMELICENSE" ]; then
+		echo "1"
+	else
+		echo "0"
+	fi
+}
+
+function DetectO365License {
+# Checks to see if an O365 subscription license file is present
+	if [ -f "$O365SUBMAIN" ] || [ -f "$O365SUBBAK1" ] || [ -f "$O365SUBBAK2" ]; then
+		echo "1"
+	else
+		echo "0"
+	fi
+}
+
+function RemoveVolumeLicense {
+# Removes the volume license file
+	VLREADYTOREMOVE=$(DetectVolumeLicense)
+	if [ "$VLREADYTOREMOVE" == "1" ]; then
+		PRIVS=$(GetSudo)
+		if [ "$PRIVS" == "1" ]; then
+			echo "1"
+			return
+		else
+			rm -f "$VOLUMELICENSE"
+			if [ "$?" == "0" ]; then
+				echo "0"
+			else
+				echo "1"
+			fi
+		fi
+	else
+		echo "2"
+	fi
+}
+
+function RemoveO365License {
+# Removes the Office 365 Subscription license files
+	O365READYTOREMOVE=$(DetectO365License)
+	if [ "$O365READYTOREMOVE" == "1" ]; then
+		if [ -f "$O365SUBMAIN" ]; then
+			rm -f "$O365SUBMAIN"
+		fi
+		if [ -f "$O365SUBBAK1" ]; then
+			rm -f "$O365SUBBAK1"
+		fi
+		if [ -f "$O365SUBBAK2" ]; then
+			rm -f "$O365SUBBAK2"
+		fi
+		O365VERIFYREMOVAL=$(DetectO365License)
+		if [ "$O365VERIFYREMOVAL" == "0" ]; then
+			echo "0"
+		else
+			echo "1"
+		fi
+	else
+		echo "2"
+	fi
+	
+}
+
+function GetSudo {
+# Checks to see if the user has root-level permissions
+	if [ "$EUID" != "0" ]; then
+		sudo -p "Enter administrator password: " echo
+		if [ $? -eq 0 ] ; then
+			echo "0"
+		else
+			echo "1"
+		fi
+	fi
+}
+
+# Evaluate command-line arguments
+if [[ $# = 0 ]]; then
+	ShowUsage
+else
+	for KEY in "$@"
+	do
+	case $KEY in
+    	--Help|-?|--help)
+    	ShowUsage
+    	shift # past argument
+    	;;
+    	--all|-a)
+    	REMOVEVL=true
+    	REMOVEO365=true
+    	shift # past argument
+		;;
+		--detectonly|-d)
+		DETECT=true
+		shift # past argument
+		;;
+		--o365|-o|--O365)
+		REMOVEO365=true
+		shift # past argument
+		;;
+		--volume|-v)
+		REMOVEVL=true
+		shift # past argument
+		;;
+		*)
+    	ShowUsage
+    	;;
+    esac
+	shift # past argument or value
+	done
+fi
+
+## Main
+# Check first for detection mode
+if [ $DETECT ]; then
+	VLPRESENT=$(DetectVolumeLicense)
+	if [ "$VLPRESENT" == "1" ]; then
+		echo "A volume license was detected."
+	else
+		echo "A volume license was NOT detected."
+	fi
+	
+	O365PRESENT=$(DetectO365License)
+	if [ "$O365PRESENT" == "1" ]; then
+		echo "An Office 365 Subscription license was detected."
+	else
+		echo "An Office 365 Subscription license was NOT detected."
+	fi
+	
+	if [ "$VLPRESENT" == "1" ] && [ "$O365PRESENT" == "1" ]; then
+		echo "WARNING: Both volume and Office 365 Subscription licenses were detected. Only the volume license will be used."
+	fi
+fi
+
+# Remove volume license
+if [ $REMOVEVL ]; then
+	VLPRESENT=$(DetectVolumeLicense)
+	if [ "$VLPRESENT" == "1" ]; then
+		CheckRunning
+		REMOVEVLFILES=$(RemoveVolumeLicense)
+		if [ "$REMOVEVLFILES" == "0" ]; then
+			echo "The volume license files were removed successfully."
+		elif [ "$REMOVEVLFILES" == "2" ]; then
+			echo "WARNING: No volume license files were present"
+		else
+			echo "ERROR: The volume license files could NOT be removed. Try using the sudo command to elevate permissions."
+			exit 1
+		fi
+	else
+		echo "WARNING: No volume license files were present"
+	fi
+fi
+
+# Remove subscription license
+if [ $REMOVEO365 ]; then
+	O365PRESENT=$(DetectO365License)
+	if [ "$O365PRESENT" == "1" ]; then
+		CheckRunning
+		REMOVEO365FILES=$(RemoveO365License)
+		if [ "$REMOVEO365FILES" == "0" ]; then
+			echo "The Office 365 Subscription license files were removed successfully."
+		elif [ "$REMOVEO365FILES" == "2" ]; then
+			echo "WARNING: No Office 365 Subscription license files were present"
+		else
+			echo "ERROR: The Office 365 Subscription license files could NOT be removed."
+			exit 1
+		fi
+	else
+		echo "WARNING: No Office 365 Subscription license files were present"
+	fi
+fi
+
+
+exit 0
