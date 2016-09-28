@@ -2,7 +2,7 @@
 #set -x
 
 TOOL_NAME="Microsoft Office 2016 License Removal Tool"
-TOOL_VERSION="1.0"
+TOOL_VERSION="1.1"
 
 ## Copyright (c) 2016 Microsoft Corp. All rights reserved.
 ## Scripts are not supported under any Microsoft standard support program or service. The scripts are provided AS IS without warranty of any kind.
@@ -101,7 +101,7 @@ function RemoveVolumeLicense {
 			echo "1"
 			return
 		else
-			rm -f "$VOLUMELICENSE"
+			sudo rm -f "$VOLUMELICENSE"
 			if [ "$?" == "0" ]; then
 				echo "0"
 			else
@@ -136,6 +136,19 @@ function RemoveO365License {
 		echo "2"
 	fi
 	
+}
+
+function RemoveReceipt {
+	local PKGARRAY=($(pkgutil --pkgs=$1))
+	for p in "${PKGARRAY[@]}"
+	do
+		sudo pkgutil --forget $p
+		if [ $? -eq 0 ] ; then
+			echo "0"
+		else
+			echo "1"
+		fi
+	done
 }
 
 function GetSudo {
@@ -222,6 +235,7 @@ if [ $REMOVEVL ]; then
 			echo "ERROR: The volume license files could NOT be removed. Try using the sudo command to elevate permissions."
 			exit 1
 		fi
+		REMOVEVLRECEIPT=$(RemoveReceipt "com.microsoft.pkg.licensing.volume")
 	else
 		echo "WARNING: No volume license files were present"
 	fi
