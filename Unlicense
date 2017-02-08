@@ -2,7 +2,7 @@
 #set -x
 
 TOOL_NAME="Microsoft Office 2016 License Removal Tool"
-TOOL_VERSION="1.1"
+TOOL_VERSION="1.2"
 
 ## Copyright (c) 2016 Microsoft Corp. All rights reserved.
 ## Scripts are not supported under any Microsoft standard support program or service. The scripts are provided AS IS without warranty of any kind.
@@ -151,6 +151,30 @@ function RemoveReceipt {
 	done
 }
 
+# Checks to see if 'msoCredentialSchemeADAL' entries are present in the keychain
+function FindEntryMsoCredentialSchemeADAL {
+	/usr/bin/security find-internet-password -s 'msoCredentialSchemeADAL' 2> /dev/null 1> /dev/null
+	echo $?
+}
+
+# Removes the first 'msoCredentialSchemeADAL' entry from the keychain
+function RemoveEntryMsoCredentialSchemeADAL {
+	/usr/bin/security delete-internet-password -s 'msoCredentialSchemeADAL' 2> /dev/null 1> /dev/null
+	#echo $?
+}
+
+# Checks to see if 'msoCredentialSchemeLiveId' entries are present in the keychain
+function FindEntryMsoCredentialSchemeLiveId {
+	/usr/bin/security find-internet-password -s 'msoCredentialSchemeLiveId' 2> /dev/null 1> /dev/null
+	echo $?
+}
+
+# Removes the first 'msoCredentialSchemeLiveId' entry from the keychain
+function RemoveEntryMsoCredentialSchemeLiveId {
+	/usr/bin/security delete-internet-password -s 'msoCredentialSchemeLiveId' 2> /dev/null 1> /dev/null
+	#echo $?
+}
+
 function GetSudo {
 # Checks to see if the user has root-level permissions
 	if [ "$EUID" != "0" ]; then
@@ -246,6 +270,22 @@ if [ $REMOVEO365 ]; then
 	O365PRESENT=$(DetectO365License)
 	if [ "$O365PRESENT" == "1" ]; then
 		CheckRunning
+		# Find and remove 'msoCredentialSchemeADAL' entries
+		MAXCOUNT=0
+		KEYNOTPRESENT=$(FindEntryMsoCredentialSchemeADAL)
+		while [ "$KEYNOTPRESENT" == "0" ] || [ $MAXCOUNT -gt 20 ]; do
+			RemoveEntryMsoCredentialSchemeADAL
+			let MAXCOUNT=MAXCOUNT+1
+			KEYNOTPRESENT=$(FindEntryMsoCredentialSchemeADAL)
+		done
+		# Find and remove 'msoCredentialSchemeLiveId' entries
+		MAXCOUNT=0
+		KEYNOTPRESENT=$(FindEntryMsoCredentialSchemeLiveId)
+		while [ "$KEYNOTPRESENT" == "0" ] || [ $MAXCOUNT -gt 20 ]; do
+			RemoveEntryMsoCredentialSchemeLiveId
+			let MAXCOUNT=MAXCOUNT+1
+			KEYNOTPRESENT=$(FindEntryMsoCredentialSchemeLiveId)
+		done
 		REMOVEO365FILES=$(RemoveO365License)
 		if [ "$REMOVEO365FILES" == "0" ]; then
 			echo "The Office 365 Subscription license files were removed successfully."
