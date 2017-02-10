@@ -2,7 +2,7 @@
 #set -x
 
 TOOL_NAME="Microsoft Office 2016 License Removal Tool"
-TOOL_VERSION="1.2"
+TOOL_VERSION="1.3"
 
 ## Copyright (c) 2016 Microsoft Corp. All rights reserved.
 ## Scripts are not supported under any Microsoft standard support program or service. The scripts are provided AS IS without warranty of any kind.
@@ -29,8 +29,8 @@ function ShowUsage {
 # Shows tool usage and parameters
 	echo $TOOL_NAME - $TOOL_VERSION
 	echo "Purpose: Removes current Office 2016 for Mac activation license and returns apps to read-only mode"
-	echo "Usage: Unlicense [--all] [--detectonly] [--o365] [--volume]"
-	echo "Example: Unlicense --o365"
+	echo "Usage: Unlicense [--All] [--DetectOnly] [--O365] [--Volume] [--ForceClose]"
+	echo "Example: Unlicense --All --ForceClose"
 	echo
 	exit 0
 }
@@ -72,6 +72,19 @@ function CheckLaunchState {
 	else
 		echo "0"
 	fi
+}
+
+function ForceTerminate {
+# Forcibly terminates a running process
+	$(ps ax | grep -v grep | grep "$1" | awk '{print $1}' | xargs kill -9 2> /dev/null)
+}
+
+function ForceQuitApps {
+# Force quit all Office apps that integrate with licensing
+	ForceTerminate "$WORD2016PATH"
+	ForceTerminate "$EXCEL2016PATH"
+	ForceTerminate "$POWERPOINT2016PATH"
+	ForceTerminate "$OUTLOOK2016PATH"
 }
 
 function DetectVolumeLicense {
@@ -135,7 +148,6 @@ function RemoveO365License {
 	else
 		echo "2"
 	fi
-	
 }
 
 function RemoveReceipt {
@@ -194,25 +206,29 @@ else
 	for KEY in "$@"
 	do
 	case $KEY in
-    	--Help|-?|--help)
+    	--Help|-h|--help)
     	ShowUsage
     	shift # past argument
     	;;
-    	--all|-a)
+    	--All|-a|--all)
     	REMOVEVL=true
     	REMOVEO365=true
     	shift # past argument
 		;;
-		--detectonly|-d)
+		--DetectOnly|-d|--detectonly)
 		DETECT=true
 		shift # past argument
 		;;
-		--o365|-o|--O365)
+		--O365|-o|--o365)
 		REMOVEO365=true
 		shift # past argument
 		;;
-		--volume|-v)
+		--Volume|-v|--volume)
 		REMOVEVL=true
+		shift # past argument
+		;;
+		--ForceClose|-f|--forceclose)
+		FORCECLOSE=true
 		shift # past argument
 		;;
 		*)
@@ -249,7 +265,11 @@ fi
 if [ $REMOVEVL ]; then
 	VLPRESENT=$(DetectVolumeLicense)
 	if [ "$VLPRESENT" == "1" ]; then
-		CheckRunning
+		if [ $FORCECLOSE ]; then
+			ForceQuitApps
+		else
+			CheckRunning
+		fi
 		REMOVEVLFILES=$(RemoveVolumeLicense)
 		if [ "$REMOVEVLFILES" == "0" ]; then
 			echo "The volume license files were removed successfully."
@@ -269,7 +289,11 @@ fi
 if [ $REMOVEO365 ]; then
 	O365PRESENT=$(DetectO365License)
 	if [ "$O365PRESENT" == "1" ]; then
-		CheckRunning
+		if [ $FORCECLOSE ]; then
+			ForceQuitApps
+		else
+			CheckRunning
+		fi
 		# Find and remove 'msoCredentialSchemeADAL' entries
 		MAXCOUNT=0
 		KEYNOTPRESENT=$(FindEntryMsoCredentialSchemeADAL)
