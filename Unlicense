@@ -2,9 +2,9 @@
 #set -x
 
 TOOL_NAME="Microsoft Office 2016 License Removal Tool"
-TOOL_VERSION="1.3"
+TOOL_VERSION="1.4"
 
-## Copyright (c) 2016 Microsoft Corp. All rights reserved.
+## Copyright (c) 2017 Microsoft Corp. All rights reserved.
 ## Scripts are not supported under any Microsoft standard support program or service. The scripts are provided AS IS without warranty of any kind.
 ## Microsoft disclaims all implied warranties including, without limitation, any implied warranties of merchantability or of fitness for a 
 ## particular purpose. The entire risk arising out of the use or performance of the scripts and documentation remains with you. In no event shall
@@ -24,9 +24,12 @@ VOLUMELICENSE="/Library/Preferences/com.microsoft.office.licensingV2.plist"
 O365SUBMAIN="$HOME/Library/Group Containers/UBF8T346G9.Office/com.microsoft.Office365.plist"
 O365SUBBAK1="$HOME/Library/Group Containers/UBF8T346G9.Office/com.microsoft.e0E2OUQxNUY1LTAxOUQtNDQwNS04QkJELTAxQTI5M0JBOTk4O.plist"
 O365SUBBAK2="$HOME/Library/Group Containers/UBF8T346G9.Office/e0E2OUQxNUY1LTAxOUQtNDQwNS04QkJELTAxQTI5M0JBOTk4O"
+O365SUBMAINB="$HOME/Library/Group Containers/UBF8T346G9.Office/com.microsoft.Office365V2.plist"
+O365SUBBAK1B="$HOME/Library/Group Containers/UBF8T346G9.Office/com.microsoft.O4kTOBJ0M5ITQxATLEJkQ40SNwQDNtQUOxATL1YUNxQUO2E0e.plist"
+O365SUBBAK2B="$HOME/Library/Group Containers/UBF8T346G9.Office/O4kTOBJ0M5ITQxATLEJkQ40SNwQDNtQUOxATL1YUNxQUO2E0e"
 
-function ShowUsage {
 # Shows tool usage and parameters
+function ShowUsage {
 	echo $TOOL_NAME - $TOOL_VERSION
 	echo "Purpose: Removes current Office 2016 for Mac activation license and returns apps to read-only mode"
 	echo "Usage: Unlicense [--All] [--DetectOnly] [--O365] [--Volume] [--ForceClose]"
@@ -35,8 +38,8 @@ function ShowUsage {
 	exit 0
 }
 
-function CheckRunning {
 # Check that all licensed applications are not running
+function CheckRunning {
 	OPENAPPS=0
 	WORDRUNSTATE=$(CheckLaunchState "$WORD2016PATH")
 	if [ "$WORDRUNSTATE" == "1" ]; then
@@ -64,8 +67,8 @@ function CheckRunning {
 	fi
 }
 
-function CheckLaunchState {
 # Checks to see if a process is running
+function CheckLaunchState {
 	local RUNNING_RESULT=$(ps ax | grep -v grep | grep "$1")
 	if [ "${#RUNNING_RESULT}" -gt 0 ]; then
 		echo "1"
@@ -74,21 +77,21 @@ function CheckLaunchState {
 	fi
 }
 
-function ForceTerminate {
 # Forcibly terminates a running process
+function ForceTerminate {
 	$(ps ax | grep -v grep | grep "$1" | awk '{print $1}' | xargs kill -9 2> /dev/null)
 }
 
-function ForceQuitApps {
 # Force quit all Office apps that integrate with licensing
+function ForceQuitApps {
 	ForceTerminate "$WORD2016PATH"
 	ForceTerminate "$EXCEL2016PATH"
 	ForceTerminate "$POWERPOINT2016PATH"
 	ForceTerminate "$OUTLOOK2016PATH"
 }
 
-function DetectVolumeLicense {
 # Checks to see if a volume license file is present
+function DetectVolumeLicense {
 	if [ -f "$VOLUMELICENSE" ]; then
 		echo "1"
 	else
@@ -96,17 +99,17 @@ function DetectVolumeLicense {
 	fi
 }
 
-function DetectO365License {
 # Checks to see if an O365 subscription license file is present
-	if [ -f "$O365SUBMAIN" ] || [ -f "$O365SUBBAK1" ] || [ -f "$O365SUBBAK2" ]; then
+function DetectO365License {
+	if [ -f "$O365SUBMAIN" ] || [ -f "$O365SUBBAK1" ] || [ -f "$O365SUBBAK2" ] || [ -f "$O365SUBMAINB" ] || [ -f "$O365SUBBAK1B" ] || [ -f "$O365SUBBAK2B" ]; then
 		echo "1"
 	else
 		echo "0"
 	fi
 }
 
-function RemoveVolumeLicense {
 # Removes the volume license file
+function RemoveVolumeLicense {
 	VLREADYTOREMOVE=$(DetectVolumeLicense)
 	if [ "$VLREADYTOREMOVE" == "1" ]; then
 		PRIVS=$(GetSudo)
@@ -126,8 +129,8 @@ function RemoveVolumeLicense {
 	fi
 }
 
-function RemoveO365License {
 # Removes the Office 365 Subscription license files
+function RemoveO365License {
 	O365READYTOREMOVE=$(DetectO365License)
 	if [ "$O365READYTOREMOVE" == "1" ]; then
 		if [ -f "$O365SUBMAIN" ]; then
@@ -138,6 +141,15 @@ function RemoveO365License {
 		fi
 		if [ -f "$O365SUBBAK2" ]; then
 			rm -f "$O365SUBBAK2"
+		fi
+		if [ -f "$O365SUBMAINB" ]; then
+			rm -f "$O365SUBMAINB"
+		fi
+		if [ -f "$O365SUBBAK1B" ]; then
+			rm -f "$O365SUBBAK1B"
+		fi
+		if [ -f "$O365SUBBAK2B" ]; then
+			rm -f "$O365SUBBAK2B"
 		fi
 		O365VERIFYREMOVAL=$(DetectO365License)
 		if [ "$O365VERIFYREMOVAL" == "0" ]; then
@@ -150,6 +162,7 @@ function RemoveO365License {
 	fi
 }
 
+# Removes the package receipt metadata
 function RemoveReceipt {
 	local PKGARRAY=($(pkgutil --pkgs=$1))
 	for p in "${PKGARRAY[@]}"
@@ -161,6 +174,14 @@ function RemoveReceipt {
 			echo "1"
 		fi
 	done
+}
+
+# Reset the first run experience for each licensed app
+function ResetFRE {
+	/usr/bin/defaults write com.microsoft.Word kSubUIAppCompletedFirstRunSetup1507 -bool FALSE
+	/usr/bin/defaults write com.microsoft.Excel kSubUIAppCompletedFirstRunSetup1507 -bool FALSE
+	/usr/bin/defaults write com.microsoft.Powerpoint kSubUIAppCompletedFirstRunSetup1507 -bool FALSE
+	/usr/bin/defaults write com.microsoft.Outlook FirstRunExperienceCompletedO15 -bool FALSE
 }
 
 # Checks to see if 'msoCredentialSchemeADAL' entries are present in the keychain
@@ -272,6 +293,7 @@ if [ $REMOVEVL ]; then
 		fi
 		REMOVEVLFILES=$(RemoveVolumeLicense)
 		if [ "$REMOVEVLFILES" == "0" ]; then
+			ResetFRE
 			echo "The volume license files were removed successfully."
 		elif [ "$REMOVEVLFILES" == "2" ]; then
 			echo "WARNING: No volume license files were present"
@@ -312,6 +334,7 @@ if [ $REMOVEO365 ]; then
 		done
 		REMOVEO365FILES=$(RemoveO365License)
 		if [ "$REMOVEO365FILES" == "0" ]; then
+			ResetFRE
 			echo "The Office 365 Subscription license files were removed successfully."
 		elif [ "$REMOVEO365FILES" == "2" ]; then
 			echo "WARNING: No Office 365 Subscription license files were present"
