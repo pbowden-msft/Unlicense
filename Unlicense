@@ -2,7 +2,7 @@
 #set -x
 
 TOOL_NAME="Microsoft Office 2016 License Removal Tool"
-TOOL_VERSION="1.4"
+TOOL_VERSION="2.0"
 
 ## Copyright (c) 2017 Microsoft Corp. All rights reserved.
 ## Scripts are not supported under any Microsoft standard support program or service. The scripts are provided AS IS without warranty of any kind.
@@ -193,7 +193,6 @@ function FindEntryMsoCredentialSchemeADAL {
 # Removes the first 'msoCredentialSchemeADAL' entry from the keychain
 function RemoveEntryMsoCredentialSchemeADAL {
 	/usr/bin/security delete-internet-password -s 'msoCredentialSchemeADAL' 2> /dev/null 1> /dev/null
-	#echo $?
 }
 
 # Checks to see if 'msoCredentialSchemeLiveId' entries are present in the keychain
@@ -205,7 +204,105 @@ function FindEntryMsoCredentialSchemeLiveId {
 # Removes the first 'msoCredentialSchemeLiveId' entry from the keychain
 function RemoveEntryMsoCredentialSchemeLiveId {
 	/usr/bin/security delete-internet-password -s 'msoCredentialSchemeLiveId' 2> /dev/null 1> /dev/null
-	#echo $?
+}
+
+# Checks to see if 'MSOpenTech.ADAL.1*' entries are present in the keychain
+function FindEntryMSOpenTechADAL1 {
+	/usr/bin/security find-generic-password -G 'MSOpenTech.ADAL.1' 2> /dev/null 1> /dev/null
+	echo $?
+}
+
+# Removes the first 'MSOpenTech.ADAL.1*' entry from the keychain
+function RemoveEntryMSOpenTechADAL1 {
+	/usr/bin/security delete-generic-password -G 'MSOpenTech.ADAL.1' 2> /dev/null 1> /dev/null
+}
+
+# Checks to see if the 'Microsoft Office Identities Cache 2' entry is present in the keychain (15.x builds)
+function FindEntryOfficeIdCache2 {
+	/usr/bin/security find-generic-password -l 'Microsoft Office Identities Cache 2' 2> /dev/null 1> /dev/null
+	echo $?
+}
+
+# Removes the 'Microsoft Office Identities Cache 2' entry from the keychain (15.x builds)
+function RemoveEntryOfficeIdCache2 {
+	/usr/bin/security delete-generic-password -l 'Microsoft Office Identities Cache 2' 2> /dev/null 1> /dev/null
+}
+
+# Checks to see if the 'Microsoft Office Identities Cache 3' entry is present in the keychain (16.x builds)
+function FindEntryOfficeIdCache3 {
+	/usr/bin/security find-generic-password -l 'Microsoft Office Identities Cache 3' 2> /dev/null 1> /dev/null
+	echo $?
+}
+
+# Removes the 'Microsoft Office Identities Cache 3' entry from the keychain (16.x builds)
+function RemoveEntryOfficeIdCache3 {
+	/usr/bin/security delete-generic-password -l 'Microsoft Office Identities Cache 3' 2> /dev/null 1> /dev/null
+}
+
+# Checks to see if the 'Microsoft Office Identities Settings 2' entry is present in the keychain (15.x builds)
+function FindEntryOfficeIdSettings2 {
+	/usr/bin/security find-generic-password -l 'Microsoft Office Identities Settings 2' 2> /dev/null 1> /dev/null
+	echo $?
+}
+
+# Removes the 'Microsoft Office Identities Settings 2' entry from the keychain (15.x builds)
+function RemoveEntryOfficeIdSettings2 {
+	/usr/bin/security delete-generic-password -l 'Microsoft Office Identities Settings 2' 2> /dev/null 1> /dev/null
+}
+
+# Checks to see if the 'Microsoft Office Identities Settings 3' entry is present in the keychain (16.x builds)
+function FindEntryOfficeIdSettings3 {
+	/usr/bin/security find-generic-password -l 'Microsoft Office Identities Settings 3' 2> /dev/null 1> /dev/null
+	echo $?
+}
+
+# Removes the 'Microsoft Office Identities Settings 3' entry from the keychain (16.x builds)
+function RemoveEntryOfficeIdSettings3 {
+	/usr/bin/security delete-generic-password -l 'Microsoft Office Identities Settings 3' 2> /dev/null 1> /dev/null
+}
+
+# Checks to see if the 'Microsoft Office Ticket Cache' entry is present in the keychain (16.x builds)
+function FindEntryOfficeTicketCache {
+	/usr/bin/security find-generic-password -l 'Microsoft Office Ticket Cache' 2> /dev/null 1> /dev/null
+	echo $?
+}
+
+# Removes the 'Microsoft Office Ticket Cache' entry from the keychain (16.x builds)
+function RemoveEntryOfficeTicketCache {
+	/usr/bin/security delete-generic-password -l 'Microsoft Office Ticket Cache' 2> /dev/null 1> /dev/null
+}
+
+# Checks to see if the 'com.helpshift.data_com.microsoft.Outlook' entry is present in the keychain
+function FindEntryHelpShift {
+	/usr/bin/security find-generic-password -l 'com.helpshift.data_com.microsoft.Outlook' 2> /dev/null 1> /dev/null
+	echo $?
+}
+
+# Removes the 'com.helpshift.data_com.microsoft.Outlook' entry from the keychain
+function RemoveEntryHelpShift {
+	/usr/bin/security delete-generic-password -l 'com.helpshift.data_com.microsoft.Outlook' 2> /dev/null 1> /dev/null
+}
+
+# Checks to see if the 'MicrosoftOfficeRMSCredential' entry is present in the keychain
+function FindEntryRMSCredential {
+	/usr/bin/security find-generic-password -l 'MicrosoftOfficeRMSCredential' 2> /dev/null 1> /dev/null
+	echo $?
+}
+
+# Removes the 'MicrosoftOfficeRMSCredential' entry from the keychain
+function RemoveEntryRMSCredential {
+	/usr/bin/security delete-generic-password -l 'MicrosoftOfficeRMSCredential' 2> /dev/null 1> /dev/null
+}
+
+# Checks to see if the 'MSProtection.framework.service' entry is present in the keychain
+function FindEntryMSProtection {
+	/usr/bin/security find-generic-password -l 'MSProtection.framework.service' 2> /dev/null 1> /dev/null
+	echo $?
+}
+
+# Removes the 'MSProtection.framework.service' entry from the keychain
+function RemoveEntryMSProtection {
+	/usr/bin/security delete-generic-password -l 'MSProtection.framework.service' 2> /dev/null 1> /dev/null
 }
 
 function GetSudo {
@@ -227,14 +324,14 @@ else
 	for KEY in "$@"
 	do
 	case $KEY in
-    	--Help|-h|--help)
-    	ShowUsage
-    	shift # past argument
-    	;;
-    	--All|-a|--all)
-    	REMOVEVL=true
-    	REMOVEO365=true
-    	shift # past argument
+		--Help|-h|--help)
+		ShowUsage
+		shift # past argument
+		;;
+		--All|-a|--all)
+		REMOVEVL=true
+		REMOVEO365=true
+		shift # past argument
 		;;
 		--DetectOnly|-d|--detectonly)
 		DETECT=true
@@ -253,9 +350,9 @@ else
 		shift # past argument
 		;;
 		*)
-    	ShowUsage
-    	;;
-    esac
+		ShowUsage
+		;;
+	esac
 	shift # past argument or value
 	done
 fi
@@ -324,6 +421,7 @@ if [ $REMOVEO365 ]; then
 			let MAXCOUNT=MAXCOUNT+1
 			KEYNOTPRESENT=$(FindEntryMsoCredentialSchemeADAL)
 		done
+		
 		# Find and remove 'msoCredentialSchemeLiveId' entries
 		MAXCOUNT=0
 		KEYNOTPRESENT=$(FindEntryMsoCredentialSchemeLiveId)
@@ -332,6 +430,91 @@ if [ $REMOVEO365 ]; then
 			let MAXCOUNT=MAXCOUNT+1
 			KEYNOTPRESENT=$(FindEntryMsoCredentialSchemeLiveId)
 		done
+		
+		# Find and remove 'MSOpenTech.ADAL.1*' entries
+		MAXCOUNT=0
+		KEYNOTPRESENT=$(FindEntryMSOpenTechADAL1)
+		while [ "$KEYNOTPRESENT" == "0" ] || [ $MAXCOUNT -gt 20 ]; do
+			RemoveEntryMSOpenTechADAL1
+			let MAXCOUNT=MAXCOUNT+1
+			KEYNOTPRESENT=$(FindEntryMSOpenTechADAL1)
+		done
+		
+		# Find and remove 'Microsoft Office Identities Cache 2' entries
+		MAXCOUNT=0
+		KEYNOTPRESENT=$(FindEntryOfficeIdCache2)
+		while [ "$KEYNOTPRESENT" == "0" ] || [ $MAXCOUNT -gt 20 ]; do
+			RemoveEntryOfficeIdCache2
+			let MAXCOUNT=MAXCOUNT+1
+			KEYNOTPRESENT=$(FindEntryOfficeIdCache2)
+		done
+		
+		# Find and remove 'Microsoft Office Identities Cache 3' entries
+		MAXCOUNT=0
+		KEYNOTPRESENT=$(FindEntryOfficeIdCache3)
+		while [ "$KEYNOTPRESENT" == "0" ] || [ $MAXCOUNT -gt 20 ]; do
+			RemoveEntryOfficeIdCache3
+			let MAXCOUNT=MAXCOUNT+1
+			KEYNOTPRESENT=$(FindEntryOfficeIdCache3)
+		done
+		
+		# Find and remove 'Microsoft Office Identities Settings 2' entries
+		MAXCOUNT=0
+		KEYNOTPRESENT=$(FindEntryOfficeIdSettings2)
+		while [ "$KEYNOTPRESENT" == "0" ] || [ $MAXCOUNT -gt 20 ]; do
+			RemoveEntryOfficeIdSettings2
+			let MAXCOUNT=MAXCOUNT+1
+			KEYNOTPRESENT=$(FindEntryOfficeIdSettings2)
+		done
+		
+		# Find and remove 'Microsoft Office Identities Settings 3' entries
+		MAXCOUNT=0
+		KEYNOTPRESENT=$(FindEntryOfficeIdSettings3)
+		while [ "$KEYNOTPRESENT" == "0" ] || [ $MAXCOUNT -gt 20 ]; do
+			RemoveEntryOfficeIdSettings3
+			let MAXCOUNT=MAXCOUNT+1
+			KEYNOTPRESENT=$(FindEntryOfficeIdSettings3)
+		done
+		
+		# Find and remove 'Microsoft Office Ticket Cache' entries
+		MAXCOUNT=0
+		KEYNOTPRESENT=$(FindEntryOfficeTicketCache)
+		while [ "$KEYNOTPRESENT" == "0" ] || [ $MAXCOUNT -gt 20 ]; do
+			RemoveEntryOfficeTicketCache
+			let MAXCOUNT=MAXCOUNT+1
+			KEYNOTPRESENT=$(FindEntryOfficeTicketCache)
+		done
+		#echo "Default keychain entries removed"
+
+		# Find and remove 'MicrosoftOfficeRMSCredential' entries
+		MAXCOUNT=0
+		KEYNOTPRESENT=$(FindEntryRMSCredential)
+		while [ "$KEYNOTPRESENT" == "0" ] || [ $MAXCOUNT -gt 20 ]; do
+			RemoveEntryRMSCredential
+			let MAXCOUNT=MAXCOUNT+1
+			KEYNOTPRESENT=$(FindEntryRMSCredential)
+		done
+		
+		# Find and remove 'MSProtection.framework.service' entries
+		MAXCOUNT=0
+		KEYNOTPRESENT=$(FindEntryMSProtection)
+		while [ "$KEYNOTPRESENT" == "0" ] || [ $MAXCOUNT -gt 20 ]; do
+			RemoveEntryMSProtection
+			let MAXCOUNT=MAXCOUNT+1
+			KEYNOTPRESENT=$(FindEntryMSProtection)
+		done
+		#echo "Rights Management keychain entries removed"
+
+		# Find and remove 'com.helpshift.data_com.microsoft.Outlook' entries
+		MAXCOUNT=0
+		KEYNOTPRESENT=$(FindEntryHelpShift)
+		while [ "$KEYNOTPRESENT" == "0" ] || [ $MAXCOUNT -gt 20 ]; do
+			RemoveEntryHelpShift
+			let MAXCOUNT=MAXCOUNT+1
+			KEYNOTPRESENT=$(FindEntryHelpShift)
+		done
+		#echo "HelpShift keychain entries removed"
+
 		REMOVEO365FILES=$(RemoveO365License)
 		if [ "$REMOVEO365FILES" == "0" ]; then
 			ResetFRE
