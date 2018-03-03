@@ -2,9 +2,9 @@
 #set -x
 
 TOOL_NAME="Microsoft Office 2016 License Removal Tool"
-TOOL_VERSION="2.0"
+TOOL_VERSION="2.1"
 
-## Copyright (c) 2017 Microsoft Corp. All rights reserved.
+## Copyright (c) 2018 Microsoft Corp. All rights reserved.
 ## Scripts are not supported under any Microsoft standard support program or service. The scripts are provided AS IS without warranty of any kind.
 ## Microsoft disclaims all implied warranties including, without limitation, any implied warranties of merchantability or of fitness for a 
 ## particular purpose. The entire risk arising out of the use or performance of the scripts and documentation remains with you. In no event shall
@@ -31,7 +31,7 @@ O365SUBBAK2B="$HOME/Library/Group Containers/UBF8T346G9.Office/O4kTOBJ0M5ITQxATL
 # Shows tool usage and parameters
 function ShowUsage {
 	echo $TOOL_NAME - $TOOL_VERSION
-	echo "Purpose: Removes current Office 2016 for Mac activation license and returns apps to read-only mode"
+	echo "Purpose: Removes current Office 2016 for Mac activation license and returns apps to unlicensed state"
 	echo "Usage: Unlicense [--All] [--DetectOnly] [--O365] [--Volume] [--ForceClose]"
 	echo "Example: Unlicense --All --ForceClose"
 	echo
@@ -181,6 +181,7 @@ function ResetFRE {
 	/usr/bin/defaults write com.microsoft.Word kSubUIAppCompletedFirstRunSetup1507 -bool FALSE
 	/usr/bin/defaults write com.microsoft.Excel kSubUIAppCompletedFirstRunSetup1507 -bool FALSE
 	/usr/bin/defaults write com.microsoft.Powerpoint kSubUIAppCompletedFirstRunSetup1507 -bool FALSE
+	/usr/bin/defaults write com.microsoft.Outlook kSubUIAppCompletedFirstRunSetup1507 -bool FALSE
 	/usr/bin/defaults write com.microsoft.Outlook FirstRunExperienceCompletedO15 -bool FALSE
 }
 
