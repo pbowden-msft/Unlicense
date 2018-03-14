@@ -2,7 +2,7 @@
 #set -x
 
 TOOL_NAME="Microsoft Office 2016 License Removal Tool"
-TOOL_VERSION="2.2"
+TOOL_VERSION="2.3"
 
 ## Copyright (c) 2018 Microsoft Corp. All rights reserved.
 ## Scripts are not supported under any Microsoft standard support program or service. The scripts are provided AS IS without warranty of any kind.
@@ -387,6 +387,7 @@ if [ $DETECT ]; then
 	if [ "$VLPRESENT" == "1" ] && [ "$O365PRESENT" == "1" ]; then
 		echo "WARNING: Both volume and Office 365 Subscription licenses were detected. Only the volume license will be used."
 	fi
+	exit 0
 fi
 
 # Remove volume license
