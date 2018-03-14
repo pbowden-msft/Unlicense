@@ -2,7 +2,7 @@
 #set -x
 
 TOOL_NAME="Microsoft Office 2016 License Removal Tool"
-TOOL_VERSION="2.1"
+TOOL_VERSION="2.2"
 
 ## Copyright (c) 2018 Microsoft Corp. All rights reserved.
 ## Scripts are not supported under any Microsoft standard support program or service. The scripts are provided AS IS without warranty of any kind.
@@ -183,6 +183,15 @@ function ResetFRE {
 	/usr/bin/defaults write com.microsoft.Powerpoint kSubUIAppCompletedFirstRunSetup1507 -bool FALSE
 	/usr/bin/defaults write com.microsoft.Outlook kSubUIAppCompletedFirstRunSetup1507 -bool FALSE
 	/usr/bin/defaults write com.microsoft.Outlook FirstRunExperienceCompletedO15 -bool FALSE
+}
+
+# Reset the first run experience in sudo for each licensed app
+function SudoResetFRE {
+	sudo -u $USER /usr/bin/defaults write com.microsoft.Word kSubUIAppCompletedFirstRunSetup1507 -bool FALSE
+	sudo -u $USER /usr/bin/defaults write com.microsoft.Excel kSubUIAppCompletedFirstRunSetup1507 -bool FALSE
+	sudo -u $USER /usr/bin/defaults write com.microsoft.Powerpoint kSubUIAppCompletedFirstRunSetup1507 -bool FALSE
+	sudo -u $USER /usr/bin/defaults write com.microsoft.Outlook kSubUIAppCompletedFirstRunSetup1507 -bool FALSE
+	sudo -u $USER /usr/bin/defaults write com.microsoft.Outlook FirstRunExperienceCompletedO15 -bool FALSE
 }
 
 # Checks to see if 'msoCredentialSchemeADAL' entries are present in the keychain
@@ -391,7 +400,7 @@ if [ $REMOVEVL ]; then
 		fi
 		REMOVEVLFILES=$(RemoveVolumeLicense)
 		if [ "$REMOVEVLFILES" == "0" ]; then
-			ResetFRE
+			SudoResetFRE
 			echo "The volume license files were removed successfully."
 		elif [ "$REMOVEVLFILES" == "2" ]; then
 			echo "WARNING: No volume license files were present"
