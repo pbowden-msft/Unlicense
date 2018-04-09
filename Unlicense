@@ -151,6 +151,9 @@ function RemoveO365License {
 		if [ -f "$O365SUBBAK2B" ]; then
 			rm -f "$O365SUBBAK2B"
 		fi
+		if [ -f "$SHAREDLICENSE" ]; then
+			rm -f "$SHAREDLICENSE"
+		fi
 		O365VERIFYREMOVAL=$(DetectO365License)
 		if [ "$O365VERIFYREMOVAL" == "0" ]; then
 			echo "0"
