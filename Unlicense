@@ -2,7 +2,7 @@
 #set -x
 
 TOOL_NAME="Microsoft Office 2016 License Removal Tool"
-TOOL_VERSION="2.3"
+TOOL_VERSION="2.4"
 
 ## Copyright (c) 2018 Microsoft Corp. All rights reserved.
 ## Scripts are not supported under any Microsoft standard support program or service. The scripts are provided AS IS without warranty of any kind.
@@ -15,25 +15,41 @@ TOOL_VERSION="2.3"
 ## Feedback: pbowden@microsoft.com
 
 # Constants
-WORD2016PATH="/Applications/Microsoft Word.app"
-EXCEL2016PATH="/Applications/Microsoft Excel.app"
-POWERPOINT2016PATH="/Applications/Microsoft PowerPoint.app"
-OUTLOOK2016PATH="/Applications/Microsoft Outlook.app"
-SCRIPTPATH=$( cd $(dirname $0) ; pwd -P )
-VOLUMELICENSE="/Library/Preferences/com.microsoft.office.licensingV2.plist"
-O365SUBMAIN="$HOME/Library/Group Containers/UBF8T346G9.Office/com.microsoft.Office365.plist"
-O365SUBBAK1="$HOME/Library/Group Containers/UBF8T346G9.Office/com.microsoft.e0E2OUQxNUY1LTAxOUQtNDQwNS04QkJELTAxQTI5M0JBOTk4O.plist"
-O365SUBBAK2="$HOME/Library/Group Containers/UBF8T346G9.Office/e0E2OUQxNUY1LTAxOUQtNDQwNS04QkJELTAxQTI5M0JBOTk4O"
-O365SUBMAINB="$HOME/Library/Group Containers/UBF8T346G9.Office/com.microsoft.Office365V2.plist"
-O365SUBBAK1B="$HOME/Library/Group Containers/UBF8T346G9.Office/com.microsoft.O4kTOBJ0M5ITQxATLEJkQ40SNwQDNtQUOxATL1YUNxQUO2E0e.plist"
-O365SUBBAK2B="$HOME/Library/Group Containers/UBF8T346G9.Office/O4kTOBJ0M5ITQxATLEJkQ40SNwQDNtQUOxATL1YUNxQUO2E0e"
+function SetConstants {
+	O365PRODUCT="$HOME/Library/Group Containers/UBF8T346G9.Office"
+	WORD2016PATH="/Applications/Microsoft Word.app"
+	EXCEL2016PATH="/Applications/Microsoft Excel.app"
+	POWERPOINT2016PATH="/Applications/Microsoft PowerPoint.app"
+	OUTLOOK2016PATH="/Applications/Microsoft Outlook.app"
+	VOLUMELICENSE="/Library/Preferences/com.microsoft.office.licensingV2.plist"
+	SHAREDLICENSE="/Library/Application Support/Microsoft/Office365/com.microsoft.Office365.plist"
+	O365SUBMAIN="$O365PRODUCT/com.microsoft.Office365.plist"
+	O365SUBBAK1="$O365PRODUCT/com.microsoft.e0E2OUQxNUY1LTAxOUQtNDQwNS04QkJELTAxQTI5M0JBOTk4O.plist"
+	O365SUBBAK2="$O365PRODUCT/e0E2OUQxNUY1LTAxOUQtNDQwNS04QkJELTAxQTI5M0JBOTk4O"
+	O365SUBMAINB="$O365PRODUCT/com.microsoft.Office365V2.plist"
+	O365SUBBAK1B="$O365PRODUCT/com.microsoft.O4kTOBJ0M5ITQxATLEJkQ40SNwQDNtQUOxATL1YUNxQUO2E0e.plist"
+	O365SUBBAK2B="$O365PRODUCT/O4kTOBJ0M5ITQxATLEJkQ40SNwQDNtQUOxATL1YUNxQUO2E0e"
+}
+
+# HOME folder detection
+function GetHomeFolder {
+	HOME=$(dscl . read /Users/"$1" NFSHomeDirectory | cut -d ':' -f2 | cut -d ' ' -f2)
+	if [ "$HOME" == "" ]; then
+		if [ -d "/Users/$1" ]; then
+			HOME="/Users/$1"
+		else
+			HOME=$(eval echo "~$1")
+		fi
+	fi
+}
+
 
 # Shows tool usage and parameters
 function ShowUsage {
 	echo $TOOL_NAME - $TOOL_VERSION
 	echo "Purpose: Removes current Office 2016 for Mac activation license and returns apps to unlicensed state"
-	echo "Usage: Unlicense [--All] [--DetectOnly] [--O365] [--Volume] [--ForceClose]"
-	echo "Example: Unlicense --All --ForceClose"
+	echo "Usage: $0 [--All] [--DetectOnly] [--O365] [--Volume] [--ForceClose] [--User] [--JamfUser]"
+	echo "Example: $0 --All --ForceClose"
 	echo
 	exit 0
 }
@@ -150,6 +166,9 @@ function RemoveO365License {
 		fi
 		if [ -f "$O365SUBBAK2B" ]; then
 			rm -f "$O365SUBBAK2B"
+		fi
+		if [ -f "$SHAREDLICENSE" ]; then
+			rm -f "$SHAREDLICENSE"
 		fi
 		O365VERIFYREMOVAL=$(DetectO365License)
 		if [ "$O365VERIFYREMOVAL" == "0" ]; then
@@ -359,8 +378,17 @@ else
 		FORCECLOSE=true
 		shift # past argument
 		;;
-		*)
-		ShowUsage
+		--User:*|-u:*)
+		USER=${KEY#*:}
+		GetHomeFolder "$USER"
+		shift # past argument
+		;;
+		--JamfUser)
+		# 	Used to remove Office 2016 activation for Jamf script. Example Self Service script.
+		#  Parameter 4: --All, Parameter 5: --ForceClose, Parameter 6: --JamfUser
+		USER=$3
+		GetHomeFolder "$USER"
+		shift # past argument
 		;;
 	esac
 	shift # past argument or value
@@ -368,6 +396,7 @@ else
 fi
 
 ## Main
+SetConstants
 # Check first for detection mode
 if [ $DETECT ]; then
 	VLPRESENT=$(DetectVolumeLicense)
