@@ -2,7 +2,7 @@
 #set -x
 
 TOOL_NAME="Microsoft Office 2016 License Removal Tool"
-TOOL_VERSION="2.4"
+TOOL_VERSION="2.5"
 
 ## Copyright (c) 2018 Microsoft Corp. All rights reserved.
 ## Scripts are not supported under any Microsoft standard support program or service. The scripts are provided AS IS without warranty of any kind.
@@ -301,6 +301,17 @@ function RemoveEntryOfficeTicketCache {
 	/usr/bin/security delete-generic-password -l 'Microsoft Office Ticket Cache' 2> /dev/null 1> /dev/null
 }
 
+# Checks to see if the 'com.microsoft.adalcache' entry is present in the keychain (16.x builds)
+function FindEntryAdalCache {
+	/usr/bin/security find-generic-password -l 'com.microsoft.adalcache' 2> /dev/null 1> /dev/null
+	echo $?
+}
+
+# Removes the 'com.microsoft.adalcache' entry from the keychain (16.x builds)
+function RemoveEntryAdalCache {
+	/usr/bin/security delete-generic-password -l 'com.microsoft.adalcache' 2> /dev/null 1> /dev/null
+}
+
 # Checks to see if the 'com.helpshift.data_com.microsoft.Outlook' entry is present in the keychain
 function FindEntryHelpShift {
 	/usr/bin/security find-generic-password -l 'com.helpshift.data_com.microsoft.Outlook' 2> /dev/null 1> /dev/null
@@ -523,6 +534,15 @@ if [ $REMOVEO365 ]; then
 			RemoveEntryOfficeTicketCache
 			let MAXCOUNT=MAXCOUNT+1
 			KEYNOTPRESENT=$(FindEntryOfficeTicketCache)
+		done
+
+		# Find and remove 'com.microsoft.adalcache' entries
+		MAXCOUNT=0
+		KEYNOTPRESENT=$(FindEntryAdalCache)
+		while [ "$KEYNOTPRESENT" == "0" ] || [ $MAXCOUNT -gt 20 ]; do
+			RemoveEntryAdalCache
+			let MAXCOUNT=MAXCOUNT+1
+			KEYNOTPRESENT=$(FindEntryAdalCache)
 		done
 		#echo "Default keychain entries removed"
 
