@@ -1,8 +1,8 @@
 #!/bin/sh
 #set -x
 
-TOOL_NAME="Microsoft Office 2016 License Removal Tool"
-TOOL_VERSION="2.5"
+TOOL_NAME="Microsoft Office 365/2019/2016 License Removal Tool"
+TOOL_VERSION="2.6"
 
 ## Copyright (c) 2018 Microsoft Corp. All rights reserved.
 ## Scripts are not supported under any Microsoft standard support program or service. The scripts are provided AS IS without warranty of any kind.
@@ -47,7 +47,7 @@ function GetHomeFolder {
 # Shows tool usage and parameters
 function ShowUsage {
 	echo $TOOL_NAME - $TOOL_VERSION
-	echo "Purpose: Removes current Office 2016 for Mac activation license and returns apps to unlicensed state"
+	echo "Purpose: Removes current Office 2019/2016 for Mac activation license and returns apps to unlicensed state"
 	echo "Usage: $0 [--All] [--DetectOnly] [--O365] [--Volume] [--ForceClose] [--User] [--JamfUser]"
 	echo "Example: $0 --All --ForceClose"
 	echo
@@ -395,7 +395,7 @@ else
 		shift # past argument
 		;;
 		--JamfUser)
-		# 	Used to remove Office 2016 activation for Jamf script. Example Self Service script.
+		# 	Used to remove Office 2019/2016 activation for Jamf script. Example Self Service script.
 		#  Parameter 4: --All, Parameter 5: --ForceClose, Parameter 6: --JamfUser
 		USER=$3
 		GetHomeFolder "$USER"
