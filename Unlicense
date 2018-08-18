@@ -2,7 +2,7 @@
 #set -x
 
 TOOL_NAME="Microsoft Office 365/2019/2016 License Removal Tool"
-TOOL_VERSION="2.6"
+TOOL_VERSION="3.0"
 
 ## Copyright (c) 2018 Microsoft Corp. All rights reserved.
 ## Scripts are not supported under any Microsoft standard support program or service. The scripts are provided AS IS without warranty of any kind.
@@ -29,6 +29,7 @@ function SetConstants {
 	O365SUBMAINB="$O365PRODUCT/com.microsoft.Office365V2.plist"
 	O365SUBBAK1B="$O365PRODUCT/com.microsoft.O4kTOBJ0M5ITQxATLEJkQ40SNwQDNtQUOxATL1YUNxQUO2E0e.plist"
 	O365SUBBAK2B="$O365PRODUCT/O4kTOBJ0M5ITQxATLEJkQ40SNwQDNtQUOxATL1YUNxQUO2E0e"
+	REGISTRY="$HOME/Library/Group Containers/UBF8T346G9.Office/MicrosoftRegistrationDB.reg"
 }
 
 # HOME folder detection
@@ -47,11 +48,99 @@ function GetHomeFolder {
 # Shows tool usage and parameters
 function ShowUsage {
 	echo $TOOL_NAME - $TOOL_VERSION
-	echo "Purpose: Removes current Office 2019/2016 for Mac activation license and returns apps to unlicensed state"
+	echo "Purpose: Removes current Office 365/2019/2016 for Mac activation license and returns apps to unlicensed state"
 	echo "Usage: $0 [--All] [--DetectOnly] [--O365] [--Volume] [--ForceClose] [--User] [--JamfUser]"
 	echo "Example: $0 --All --ForceClose"
 	echo
 	exit 0
+}
+
+# Check if Registry exists
+function CheckRegistryExists {
+if [ ! -f "$REGISTRY" ]; then
+	echo "ERROR: Registry DOES NOT exist at path $REGISTRY."
+	exit 1
+fi
+}
+
+# Check to see if we get a response from a URL request
+function ContactURL {
+	local URL="$1"
+	URLRESULT=$(curl --head -s $URL | awk '/HTTP/' | cut -d ' ' -f2)
+	echo $URLRESULT
+}
+
+# Get node_id value from Registry
+function GetNodeId {
+	local NAME="$1"
+	local PARENT="$2"
+	local NODEVALUE=$(sqlite3 "$REGISTRY" "SELECT node_id from HKEY_CURRENT_USER WHERE name='$NAME' AND parent_id=$PARENT;")
+	if [ "$NODEVALUE" == '' ]; then
+		echo "0"
+	else
+		echo "$NODEVALUE"
+	fi
+}
+
+# Get node value from Registry
+function GetNodeVal {
+	local NAME="$1"
+	local NODEID="$2"
+	local NODEVALUE=$(sqlite3 "$REGISTRY" "SELECT node_id from HKEY_CURRENT_USER_values WHERE name='$NAME' AND parent_id=$NODEID;")
+	if [ "$NODEVALUE" == '' ]; then
+		echo "0"
+	else
+		echo "$NODEVALUE"
+	fi
+}
+
+# Delete value from Registry
+function DeleteValue {
+	local NAME="$1"
+	local NODEID="$2"
+	sqlite3 "$REGISTRY" "DELETE FROM HKEY_CURRENT_USER_values WHERE name='$NAME' and node_id=$NODEID;"
+}
+
+# Remove all flighting keys from the specified app
+function RemoveFlightData {
+	local KEY_APP="$1"
+	# If the flight keys are set, remove the existing values
+	KEY_UPDATETIME=($GetNodeVal "FlightUpdateTime" "$KEY_APP")
+	if [ "$KEY_UPDATETIME" != "0" ]; then
+		DeleteValue "FlightUpdateTime" "$KEY_APP"
+	fi
+	KEY_ETAG=($GetNodeVal "ETag" "$KEY_APP")
+	if [ "$KEY_ETAG" != "0" ]; then
+		DeleteValue "ETag" "$KEY_APP"
+	fi
+	KEY_IMPRESSION=($GetNodeVal "ImpressionId" "$KEY_APP")
+	if [ "$KEY_IMPRESSION" != "0" ]; then
+		DeleteValue "ImpressionId" "$KEY_APP"
+	fi
+	KEY_EXPIRES=($GetNodeVal "Expires" "$KEY_APP")
+	if [ "$KEY_EXPIRES" != "0" ]; then
+		DeleteValue "Expires" "$KEY_APP"
+	fi
+	KEY_DEFERRED=($GetNodeVal "DeferredConfigs" "$KEY_APP")
+	if [ "$KEY_DEFERRED" != "0" ]; then
+		DeleteValue "DeferredConfigs" "$KEY_APP"
+	fi
+	KEY_CONFIGID=($GetNodeVal "ConfigIds" "$KEY_APP")
+	if [ "$KEY_CONFIGID" != "0" ]; then
+		DeleteValue "ConfigIds" "$KEY_APP"
+	fi
+	KEY_NUMBERLINES=($GetNodeVal "FlightNumberlines" "$KEY_APP")
+	if [ "$KEY_NUMBERLINES" != "0" ]; then
+		DeleteValue "FlightNumberlines" "$KEY_APP"
+	fi
+	KEY_TASREQ=($GetNodeVal "TasRequestPending" "$KEY_APP")
+	if [ "$KEY_TASREQ" != "0" ]; then
+		DeleteValue "TasRequestPending" "$KEY_APP"
+	fi
+	KEY_FLVER=($GetNodeVal "FlightingVersion" "$KEY_APP")
+	if [ "$KEY_FLVER" != "0" ]; then
+		DeleteValue "FlightingVersion" "$KEY_APP"
+	fi
 }
 
 # Check that all licensed applications are not running
@@ -395,7 +484,7 @@ else
 		shift # past argument
 		;;
 		--JamfUser)
-		# 	Used to remove Office 2019/2016 activation for Jamf script. Example Self Service script.
+		# 	Used to remove Office 365/2019/2016 activation for Jamf script. Example Self Service script.
 		#  Parameter 4: --All, Parameter 5: --ForceClose, Parameter 6: --JamfUser
 		USER=$3
 		GetHomeFolder "$USER"
@@ -590,5 +679,34 @@ if [ $REMOVEO365 ]; then
 	fi
 fi
 
+if [ $REMOVEVL ] || [ $REMOVEO365 ]; then
+	# Check that MicrosoftRegistryDB.reg actually exists.
+	CheckRegistryExists
+	# Check to see if the flighting server is online
+	FLIGHTRESPONSE=$(ContactURL "https://client-office365-tas.msedge.net/ab?")
+	echo "Contacting flighting server: $FLIGHTRESPONSE"
+	# Walk the registry to find the id of the node that we need
+	KEY_SOFTWARE=$(GetNodeId "Software" '-1')
+	KEY_MICROSOFT=$(GetNodeId "Microsoft" "$KEY_SOFTWARE")
+	KEY_OFFICE=$(GetNodeId "Office" "$KEY_MICROSOFT")
+	KEY_VERSION=$(GetNodeId "16.0" "$KEY_OFFICE")
+	KEY_COMMON=$(GetNodeId "Common" "$KEY_VERSION")
+	KEY_TAS=$(GetNodeId "ExperimentTAS" "$KEY_COMMON")
+	KEY_WORD=$(GetNodeId "word" "$KEY_TAS")
+	KEY_EXCEL=$(GetNodeId "excel" "$KEY_TAS")
+	KEY_POWERPOINT=$(GetNodeId "powerpoint" "$KEY_TAS")
+	KEY_OUTLOOK=$(GetNodeId "outlook" "$KEY_TAS")
+	KEY_ONENOTE=$(GetNodeId "onenote" "$KEY_TAS")
+	KEY_LICENSING=$(GetNodeId "licensingdaemon" "$KEY_TAS")
+
+	RemoveFlightData "$KEY_WORD"
+	RemoveFlightData "$KEY_EXCEL"
+	RemoveFlightData "$KEY_POWERPOINT"
+	RemoveFlightData "$KEY_OUTLOOK"
+	RemoveFlightData "$KEY_ONENOTE"
+	RemoveFlightData "$KEY_LICENSING"
+
+	echo "Existing flight data removed."
+fi
 
 exit 0
