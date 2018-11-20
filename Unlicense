@@ -2,7 +2,7 @@
 #set -x
 
 TOOL_NAME="Microsoft Office 365/2019/2016 License Removal Tool"
-TOOL_VERSION="3.1"
+TOOL_VERSION="3.2"
 
 ## Copyright (c) 2018 Microsoft Corp. All rights reserved.
 ## Scripts are not supported under any Microsoft standard support program or service. The scripts are provided AS IS without warranty of any kind.
@@ -488,6 +488,9 @@ function GetSudo {
 	fi
 }
 
+# Global bash command arguments
+BASH_GLOBAL_ARGV=("$@")
+
 # Evaluate command-line arguments
 if [[ $# = 0 ]]; then
 	ShowUsage
@@ -528,7 +531,7 @@ else
 		--JamfUser)
 		# 	Used to remove Office 365/2019/2016 activation for Jamf script. Example Self Service script.
 		#  Parameter 4: --All, Parameter 5: --ForceClose, Parameter 6: --JamfUser
-		USER=$3
+		USER=${BASH_GLOBAL_ARGV[2]}
 		GetHomeFolder "$USER"
 		shift # past argument
 		;;
@@ -539,6 +542,11 @@ fi
 
 ## Main
 SetConstants
+# Check for user variable.
+if [ -z "$USER" ]; then
+	echo "ERROR: No user value found, please validate arguments."
+	exit 1
+fi
 # Check first for detection mode
 if [ $DETECT ]; then
 	VLPRESENT=$(DetectPerpetualLicense)
