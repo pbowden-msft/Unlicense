@@ -30,6 +30,7 @@ function SetConstants {
 	O365SUBBAK1B="$O365PRODUCT/com.microsoft.O4kTOBJ0M5ITQxATLEJkQ40SNwQDNtQUOxATL1YUNxQUO2E0e.plist"
 	O365SUBBAK2B="$O365PRODUCT/O4kTOBJ0M5ITQxATLEJkQ40SNwQDNtQUOxATL1YUNxQUO2E0e"
 	REGISTRY="$HOME/Library/Group Containers/UBF8T346G9.Office/MicrosoftRegistrationDB.reg"
+	VNEXTLICENSEPATH="$O365PRODUCT/Licenses"
 }
 
 # HOME folder detection
@@ -248,7 +249,7 @@ function PerpetualLicenseType {
 
 # Checks to see if an O365 subscription license file is present
 function DetectO365License {
-	if [ -f "$O365SUBMAIN" ] || [ -f "$O365SUBBAK1" ] || [ -f "$O365SUBBAK2" ] || [ -f "$O365SUBMAINB" ] || [ -f "$O365SUBBAK1B" ] || [ -f "$O365SUBBAK2B" ]; then
+	if [ -f "$O365SUBMAIN" ] || [ -f "$O365SUBBAK1" ] || [ -f "$O365SUBBAK2" ] || [ -f "$O365SUBMAINB" ] || [ -f "$O365SUBBAK1B" ] || [ -f "$O365SUBBAK2B" ] || [ -f "VNEXTLICENSEPATH" ]; then
 		echo "1"
 	else
 		echo "0"
@@ -300,6 +301,9 @@ function RemoveO365License {
 		fi
 		if [ -f "$SHAREDLICENSE" ]; then
 			rm -f "$SHAREDLICENSE"
+		fi
+		if [ -f "$VNEXTLICENSEPATH" ]; then
+			rm -rf "$VNEXTLICENSEPATH"
 		fi
 		O365VERIFYREMOVAL=$(DetectO365License)
 		if [ "$O365VERIFYREMOVAL" == "0" ]; then
