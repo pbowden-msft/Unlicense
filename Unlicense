@@ -249,7 +249,7 @@ function PerpetualLicenseType {
 
 # Checks to see if an O365 subscription license file is present
 function DetectO365License {
-	if [ -f "$O365SUBMAIN" ] || [ -f "$O365SUBBAK1" ] || [ -f "$O365SUBBAK2" ] || [ -f "$O365SUBMAINB" ] || [ -f "$O365SUBBAK1B" ] || [ -f "$O365SUBBAK2B" ] || [ -f "VNEXTLICENSEPATH" ]; then
+	if [ -f "$O365SUBMAIN" ] || [ -f "$O365SUBBAK1" ] || [ -f "$O365SUBBAK2" ] || [ -f "$O365SUBMAINB" ] || [ -f "$O365SUBBAK1B" ] || [ -f "$O365SUBBAK2B" ] || [ -f "$VNEXTLICENSEPATH" ]; then
 		echo "1"
 	else
 		echo "0"
