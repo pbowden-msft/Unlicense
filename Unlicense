@@ -2,9 +2,9 @@
 #set -x
 
 TOOL_NAME="Microsoft Office 365/2019/2016 License Removal Tool"
-TOOL_VERSION="3.2"
+TOOL_VERSION="3.3"
 
-## Copyright (c) 2019 Microsoft Corp. All rights reserved.
+## Copyright (c) 2020 Microsoft Corp. All rights reserved.
 ## Scripts are not supported under any Microsoft standard support program or service. The scripts are provided AS IS without warranty of any kind.
 ## Microsoft disclaims all implied warranties including, without limitation, any implied warranties of merchantability or of fitness for a 
 ## particular purpose. The entire risk arising out of the use or performance of the scripts and documentation remains with you. In no event shall
@@ -249,7 +249,7 @@ function PerpetualLicenseType {
 
 # Checks to see if an O365 subscription license file is present
 function DetectO365License {
-	if [ -f "$O365SUBMAIN" ] || [ -f "$O365SUBBAK1" ] || [ -f "$O365SUBBAK2" ] || [ -f "$O365SUBMAINB" ] || [ -f "$O365SUBBAK1B" ] || [ -f "$O365SUBBAK2B" ] || [ -f "$VNEXTLICENSEPATH" ]; then
+	if [ -f "$O365SUBMAIN" ] || [ -f "$O365SUBBAK1" ] || [ -f "$O365SUBBAK2" ] || [ -f "$O365SUBMAINB" ] || [ -f "$O365SUBBAK1B" ] || [ -f "$O365SUBBAK2B" ] || [ -e "$VNEXTLICENSEPATH" ]; then
 		echo "1"
 	else
 		echo "0"
@@ -302,7 +302,7 @@ function RemoveO365License {
 		if [ -f "$SHAREDLICENSE" ]; then
 			rm -f "$SHAREDLICENSE"
 		fi
-		if [ -f "$VNEXTLICENSEPATH" ]; then
+		if [ -e "$VNEXTLICENSEPATH" ]; then
 			rm -rf "$VNEXTLICENSEPATH"
 		fi
 		O365VERIFYREMOVAL=$(DetectO365License)
