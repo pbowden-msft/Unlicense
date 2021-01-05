@@ -2,9 +2,9 @@
 #set -x
 
 TOOL_NAME="Microsoft Office 365/2019/2016 License Removal Tool"
-TOOL_VERSION="3.3"
+TOOL_VERSION="3.4"
 
-## Copyright (c) 2020 Microsoft Corp. All rights reserved.
+## Copyright (c) 2021 Microsoft Corp. All rights reserved.
 ## Scripts are not supported under any Microsoft standard support program or service. The scripts are provided AS IS without warranty of any kind.
 ## Microsoft disclaims all implied warranties including, without limitation, any implied warranties of merchantability or of fitness for a 
 ## particular purpose. The entire risk arising out of the use or performance of the scripts and documentation remains with you. In no event shall
@@ -185,7 +185,7 @@ function CheckLaunchState {
 
 # Forcibly terminates a running process
 function ForceTerminate {
-	$(ps ax | grep -v grep | grep "$1" | awk '{print $1}' | xargs kill -9 2> /dev/null)
+	$(ps ax | grep -v grep | grep "$1" | awk '{print $1}' | xargs pkill -HUP 2> /dev/null)
 }
 
 # Force quit all Office apps that integrate with licensing
@@ -447,6 +447,17 @@ function RemoveEntryAdalCache {
 	/usr/bin/security delete-generic-password -l 'com.microsoft.adalcache' 2> /dev/null 1> /dev/null
 }
 
+# Checks to see if the 'Microsoft Office Data' entry is present in the keychain (16.45+ builds)
+function FindEntryOfficeData {
+	/usr/bin/security find-generic-password -G 'Microsoft Office Data' 2> /dev/null 1> /dev/null
+	echo $?
+}
+
+# Removes the 'Microsoft Office Data' entry from the keychain (16.45+ builds)
+function RemoveEntryOfficeData {
+	/usr/bin/security delete-generic-password -G 'Microsoft Office Data' 2> /dev/null 1> /dev/null
+}
+
 # Checks to see if the 'com.helpshift.data_com.microsoft.Outlook' entry is present in the keychain
 function FindEntryHelpShift {
 	/usr/bin/security find-generic-password -l 'com.helpshift.data_com.microsoft.Outlook' 2> /dev/null 1> /dev/null
@@ -691,7 +702,15 @@ if [ $REMOVEO365 ]; then
 			let MAXCOUNT=MAXCOUNT+1
 			KEYNOTPRESENT=$(FindEntryAdalCache)
 		done
-		#echo "Default keychain entries removed"
+
+		# Find and remove 'Microsoft Office Data' entries
+		MAXCOUNT=0
+		KEYNOTPRESENT=$(FindEntryOfficeData)
+		while [ "$KEYNOTPRESENT" == "0" ] || [ $MAXCOUNT -gt 20 ]; do
+			RemoveEntryOfficeData
+			let MAXCOUNT=MAXCOUNT+1
+			KEYNOTPRESENT=$(FindEntryOfficeData)
+		done
 
 		# Find and remove 'MicrosoftOfficeRMSCredential' entries
 		MAXCOUNT=0
