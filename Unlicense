@@ -31,6 +31,7 @@ function SetConstants {
 	O365SUBBAK2B="$O365PRODUCT/O4kTOBJ0M5ITQxATLEJkQ40SNwQDNtQUOxATL1YUNxQUO2E0e"
 	REGISTRY="$HOME/Library/Group Containers/UBF8T346G9.Office/MicrosoftRegistrationDB.reg"
 	VNEXTLICENSEPATH="$O365PRODUCT/Licenses"
+	VNEXTPERPETUALLICENSEPATH="/Library/Microsoft/Office/Licenses"
 }
 
 # HOME folder detection
@@ -198,7 +199,7 @@ function ForceQuitApps {
 
 # Checks to see if a volume license file is present
 function DetectPerpetualLicense {
-	if [ -f "$PERPETUALLICENSE" ]; then
+	if [ -f "$PERPETUALLICENSE" ] || [ -e "$VNEXTPERPETUALLICENSEPATH" ]; then
 		echo "1"
 	else
 		echo "0"
@@ -245,6 +246,10 @@ function PerpetualLicenseType {
 		fi
 		echo "Office Perpetual License"
 	fi
+	if [ -e "$VNEXTPERPETUALLICENSEPATH" ]; then
+		echo "Office 2021 Consumer License"
+		return
+	fi
 }
 
 # Checks to see if an O365 subscription license file is present
@@ -266,6 +271,12 @@ function RemovePerpetualLicense {
 			return
 		else
 			sudo rm -f "$PERPETUALLICENSE"
+			if [ "$?" == "0" ]; then
+				echo "0"
+			else
+				echo "1"
+			fi
+			sudo rm -f "$VNEXTPERPETUALLICENSEPATH"
 			if [ "$?" == "0" ]; then
 				echo "0"
 			else
