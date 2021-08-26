@@ -199,7 +199,7 @@ function ForceQuitApps {
 
 # Checks to see if a volume license file is present
 function DetectPerpetualLicense {
-	if [ -f "$PERPETUALLICENSE" ] || [ -e "$VNEXTPERPETUALLICENSEPATH" ]; then
+	if [[ -f "$PERPETUALLICENSE" ] || [ -e "$VNEXTPERPETUALLICENSEPATH" ]]; then
 		echo "1"
 	else
 		echo "0"
