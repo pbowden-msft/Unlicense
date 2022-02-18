@@ -529,6 +529,11 @@ GetSudo() {
 	fi
 }
 
+# Detect Application Bundle Version
+GetAppVersion() {
+	/usr/bin/defaults read "${1}/Contents/Info.plist" CFBundleShortVersionString
+}
+
 # Evaluate command-line arguments
 if [[ $# = 0 ]]; then
 	ShowUsage
@@ -579,6 +584,16 @@ fi
 
 ## Main
 SetConstants
+
+# Determine which Office Suite version is installed
+declare -a APPVERSIONS
+for app in "$WORDAPPPATH" "$EXCELAPPPATH" "$POWERPOINTAPPPATH" "$OUTLOOKAPPPATH"
+do
+	if [ -e "${app}" ]; then
+		APPVERSIONS+=$(GetAppVersion "${app}")
+	fi
+done
+
 # Check first for detection mode
 if [ $DETECT ]; then
 	VLPRESENT=$(DetectPerpetualLicense)
@@ -595,10 +610,24 @@ if [ $DETECT ]; then
 	else
 		echo "An Office 365 Subscription license was NOT detected."
 	fi
-	
+
 	if [ "$VLPRESENT" = "1" ] && [ "$O365PRESENT" = "1" ]; then
 		echo "WARNING: Both volume and Office 365 Subscription licenses were detected."
-		echo "If the Subscription license is valid, it will be prioritized over the volume license."
+
+		VERSIONCHECK=$((( ${${(@O)APPVERSIONS}[1]} >= 16.50 )) 2&> /dev/null; echo $?)
+
+		if [ $VERSIONCHECK = 0 ]; then
+			# Modern priority, v16.50 or newer
+			echo "If the Subscription license is valid, it will be prioritized over the volume license."
+		elif [ $VERSIONCHECK = 1 ]; then
+			# Legacy priority, v16.49 or older
+			echo "Only the volume license will be used."
+		elif [ $VERSIONCHECK = 2 ]; then
+			# No Office app bundles found at the expected locations
+			# Reply with modern priority verbiage
+			echo "WARNING: Unable to determine Office Suite version."
+			echo "If the Subscription license is valid, it will be prioritized over the volume license."
+		fi
 	fi
 	exit 0
 fi
