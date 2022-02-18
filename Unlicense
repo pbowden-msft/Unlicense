@@ -264,17 +264,15 @@ DetectO365License() {
 RemovePerpetualLicense() {
 	VLREADYTOREMOVE=$(DetectPerpetualLicense)
 	if [ "$VLREADYTOREMOVE" = "1" ]; then
-		PRIVS=$(GetSudo)
-		if [ "$PRIVS" = "1" ]; then
-			echo "1"
-			return
-		else
+		if [ -f "$PERPETUALLICENSE" ]; then
 			sudo rm -f "$PERPETUALLICENSE"
 			if [ "$?" = "0" ]; then
 				echo "0"
 			else
 				echo "1"
 			fi
+		fi
+		if [ -f "$VNEXTPERPETUALLICENSEPATH" ]; then
 			sudo rm -f "$VNEXTPERPETUALLICENSEPATH"
 			if [ "$?" = "0" ]; then
 				echo "0"
@@ -600,26 +598,32 @@ fi
 
 # Remove volume license
 if [ $REMOVEVL ]; then
-	VLPRESENT=$(DetectPerpetualLicense)
-	if [ "$VLPRESENT" = "1" ]; then
-		if [ $FORCECLOSE ]; then
-			ForceQuitApps
-		else
-			CheckRunning
-		fi
-		REMOVEVLFILES=$(RemovePerpetualLicense)
-		if [ "$REMOVEVLFILES" = "0" ]; then
-			SudoResetFRE
-			echo "The volume license files were removed successfully."
-		elif [ "$REMOVEVLFILES" = "2" ]; then
-			echo "WARNING: No volume license files were present"
-		else
-			echo "ERROR: The volume license files could NOT be removed. Try using the sudo command to elevate permissions."
-			exit 1
-		fi
-		REMOVEVLRECEIPT=$(RemoveReceipt "com.microsoft.pkg.licensing.volume")
+	PRIVS=$(GetSudo)
+	if [ "$PRIVS" = "1" ]; then
+		echo "1"
+		return
 	else
-		echo "WARNING: No volume license files were present"
+		VLPRESENT=$(DetectPerpetualLicense)
+		if [ "$VLPRESENT" = "1" ]; then
+			if [ $FORCECLOSE ]; then
+				ForceQuitApps
+			else
+				CheckRunning
+			fi
+				REMOVEVLFILES=$(RemovePerpetualLicense)
+				if [ "$REMOVEVLFILES" = "0" ]; then
+					SudoResetFRE
+					echo "The volume license files were removed successfully."
+				elif [ "$REMOVEVLFILES" = "2" ]; then
+					echo "WARNING: No volume license files were present"
+				else
+					echo "ERROR: The volume license files could NOT be removed. Try using the sudo command to elevate permissions."
+					exit 1
+				fi
+				REMOVEVLRECEIPT=$(RemoveReceipt "com.microsoft.pkg.licensing.volume")
+		else
+			echo "WARNING: No volume license files were present"
+		fi
 	fi
 fi
 
