@@ -15,12 +15,12 @@ TOOL_VERSION="3.5"
 ## Feedback: pbowden@microsoft.com
 
 # Constants
-function SetConstants {
+SetConstants() {
 	O365PRODUCT="$HOME/Library/Group Containers/UBF8T346G9.Office"
-	WORD2016PATH="/Applications/Microsoft Word.app"
-	EXCEL2016PATH="/Applications/Microsoft Excel.app"
-	POWERPOINT2016PATH="/Applications/Microsoft PowerPoint.app"
-	OUTLOOK2016PATH="/Applications/Microsoft Outlook.app"
+	WORDAPPPATH="/Applications/Microsoft Word.app"
+	EXCELAPPPATH="/Applications/Microsoft Excel.app"
+	POWERPOINTAPPPATH="/Applications/Microsoft PowerPoint.app"
+	OUTLOOKAPPPATH="/Applications/Microsoft Outlook.app"
 	PERPETUALLICENSE="/Library/Preferences/com.microsoft.office.licensingV2.plist"
 	SHAREDLICENSE="/Library/Application Support/Microsoft/Office365/com.microsoft.Office365.plist"
 	O365SUBMAIN="$O365PRODUCT/com.microsoft.Office365.plist"
@@ -29,7 +29,7 @@ function SetConstants {
 	O365SUBMAINB="$O365PRODUCT/com.microsoft.Office365V2.plist"
 	O365SUBBAK1B="$O365PRODUCT/com.microsoft.O4kTOBJ0M5ITQxATLEJkQ40SNwQDNtQUOxATL1YUNxQUO2E0e.plist"
 	O365SUBBAK2B="$O365PRODUCT/O4kTOBJ0M5ITQxATLEJkQ40SNwQDNtQUOxATL1YUNxQUO2E0e"
-	REGISTRY="$HOME/Library/Group Containers/UBF8T346G9.Office/MicrosoftRegistrationDB.reg"
+	REGISTRY="$O365PRODUCT/MicrosoftRegistrationDB.reg"
 	VNEXTLICENSEPATH="$O365PRODUCT/Licenses"
 	VNEXTPERPETUALLICENSEPATH="/Library/Microsoft/Office/Licenses"
 }
@@ -46,13 +46,12 @@ GetHomeFolder() {
 	fi
 }
 
-
 # Shows tool usage and parameters
 ShowUsage() {
 	echo $TOOL_NAME - $TOOL_VERSION
-	echo "Purpose: Removes current Office 365/2019/2016 for Mac activation license and returns apps to unlicensed state"
-	echo "Usage: $0 [--All] [--DetectOnly] [--O365] [--Volume] [--ForceClose] [--User] [--JamfUser]"
-	echo "Example: $0 --All --ForceClose"
+	echo "Purpose: Removes current Office 365/2021/2019/2016 for Mac activation license and returns apps to unlicensed state"
+	echo "Usage: ${(%):-%x} [--All] [--DetectOnly] [--O365] [--Volume] [--ForceClose] [--User] [--JamfUser]"
+	echo "Example: ${(%):-%x} --All --ForceClose"
 	echo
 	exit 0
 }
@@ -148,22 +147,22 @@ RemoveFlightData() {
 # Check that all licensed applications are not running
 CheckRunning() {
 	OPENAPPS=0
-	WORDRUNSTATE=$(CheckLaunchState "$WORD2016PATH")
+	WORDRUNSTATE=$(CheckLaunchState "$WORDAPPPATH")
 	if [ "$WORDRUNSTATE" = "1" ]; then
 		OPENAPPS=$(($OPENAPPS + 1))
 		echo "ERROR: Word must be closed before license files can be removed."
 	fi
-	EXCELRUNSTATE=$(CheckLaunchState "$EXCEL2016PATH")
+	EXCELRUNSTATE=$(CheckLaunchState "$EXCELAPPPATH")
 	if [ "$EXCELRUNSTATE" = "1" ]; then
 		OPENAPPS=$(($OPENAPPS + 1))
 		echo "ERROR: Excel must be closed before license files can be removed."
 	fi
-	POWERPOINTRUNSTATE=$(CheckLaunchState "$POWERPOINT2016PATH")
+	POWERPOINTRUNSTATE=$(CheckLaunchState "$POWERPOINTAPPPATH")
 	if [ "$POWERPOINTRUNSTATE" = "1" ]; then
 		OPENAPPS=$(($OPENAPPS + 1))
 		echo "ERROR: PowerPoint must be closed before license files can be removed."
 	fi
-	OUTLOOKRUNSTATE=$(CheckLaunchState "$OUTLOOK2016PATH")
+	OUTLOOKRUNSTATE=$(CheckLaunchState "$OUTLOOKAPPPATH")
 	if [ "$OUTLOOKRUNSTATE" = "1" ]; then
 		OPENAPPS=$(($OPENAPPS + 1))
 		echo "ERROR: Outlook must be closed before license files can be removed."
@@ -191,10 +190,10 @@ ForceTerminate() {
 
 # Force quit all Office apps that integrate with licensing
 ForceQuitApps() {
-	ForceTerminate "$WORD2016PATH"
-	ForceTerminate "$EXCEL2016PATH"
-	ForceTerminate "$POWERPOINT2016PATH"
-	ForceTerminate "$OUTLOOK2016PATH"
+	ForceTerminate "$WORDAPPPATH"
+	ForceTerminate "$EXCELAPPPATH"
+	ForceTerminate "$POWERPOINTAPPPATH"
+	ForceTerminate "$OUTLOOKAPPPATH"
 }
 
 # Checks to see if a volume license file is present
@@ -563,8 +562,8 @@ else
 		shift # past argument
 		;;
 		--JamfUser)
-		# 	Used to remove Office 365/2019/2016 activation for Jamf script. Example Self Service script.
-		#  Parameter 4: --All, Parameter 5: --ForceClose, Parameter 6: --JamfUser
+		# Used to remove Office 365/2021/2019/2016 activation for Jamf script. Example Self Service script.
+		# Parameter 4: --All, Parameter 5: --ForceClose, Parameter 6: --JamfUser
 		USER=$3
 		GetHomeFolder "$USER"
 		shift # past argument
