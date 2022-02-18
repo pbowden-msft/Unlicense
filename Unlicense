@@ -2,7 +2,7 @@
 #set -x
 
 TOOL_NAME="Microsoft Office 365/2021/2019/2016 License Removal Tool"
-TOOL_VERSION="3.5"
+TOOL_VERSION="3.6"
 
 ## Copyright (c) 2021 Microsoft Corp. All rights reserved.
 ## Scripts are not supported under any Microsoft standard support program or service. The scripts are provided AS IS without warranty of any kind.
