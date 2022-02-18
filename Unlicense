@@ -253,11 +253,18 @@ PerpetualLicenseType() {
 
 # Checks to see if an O365 subscription license file is present
 DetectO365License() {
-	if [ -f "$O365SUBMAIN" ] || [ -f "$O365SUBBAK1" ] || [ -f "$O365SUBBAK2" ] || [ -f "$O365SUBMAINB" ] || [ -f "$O365SUBBAK1B" ] || [ -f "$O365SUBBAK2B" ] || [ -e "$VNEXTLICENSEPATH" ]; then
+	if [ -f "$O365SUBMAIN" ] || [ -f "$O365SUBBAK1" ] || [ -f "$O365SUBBAK2" ] || [ -f "$O365SUBMAINB" ] || [ -f "$O365SUBBAK1B" ] || [ -f "$O365SUBBAK2B" ] || [ -n "$( DetectIfUserHasSignedIn )" ]; then
 		echo "1"
 	else
 		echo "0"
 	fi
+}
+
+# Checks to see if a user has signed into Office
+# In older versions of the Office Suite, this directory would exist even before logging in.
+# That said, this check isn't completely reliable as the directory and license file's contents do not change if the user has signed out of Office.
+DetectIfUserHasSignedIn() {
+	/usr/bin/find "$VNEXTLICENSEPATH" -type f ! -iname ".DS_Store" 2&> /dev/null
 }
 
 # Removes the volume license file
@@ -310,7 +317,7 @@ RemoveO365License() {
 		if [ -f "$SHAREDLICENSE" ]; then
 			rm -f "$SHAREDLICENSE"
 		fi
-		if [ -e "$VNEXTLICENSEPATH" ]; then
+		if [ -n "$( DetectIfUserHasSignedIn )" ]; then
 			rm -rf "$VNEXTLICENSEPATH"
 		fi
 		O365VERIFYREMOVAL=$(DetectO365License)
