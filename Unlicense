@@ -2,7 +2,7 @@
 #set -x
 
 TOOL_NAME="Microsoft Office 365/2021/2019/2016 License Removal Tool"
-TOOL_VERSION="3.5"
+TOOL_VERSION="3.6"
 
 ## Copyright (c) 2021 Microsoft Corp. All rights reserved.
 ## Scripts are not supported under any Microsoft standard support program or service. The scripts are provided AS IS without warranty of any kind.
@@ -15,12 +15,12 @@ TOOL_VERSION="3.5"
 ## Feedback: pbowden@microsoft.com
 
 # Constants
-function SetConstants {
+SetConstants() {
 	O365PRODUCT="$HOME/Library/Group Containers/UBF8T346G9.Office"
-	WORD2016PATH="/Applications/Microsoft Word.app"
-	EXCEL2016PATH="/Applications/Microsoft Excel.app"
-	POWERPOINT2016PATH="/Applications/Microsoft PowerPoint.app"
-	OUTLOOK2016PATH="/Applications/Microsoft Outlook.app"
+	WORDAPPPATH="/Applications/Microsoft Word.app"
+	EXCELAPPPATH="/Applications/Microsoft Excel.app"
+	POWERPOINTAPPPATH="/Applications/Microsoft PowerPoint.app"
+	OUTLOOKAPPPATH="/Applications/Microsoft Outlook.app"
 	PERPETUALLICENSE="/Library/Preferences/com.microsoft.office.licensingV2.plist"
 	SHAREDLICENSE="/Library/Application Support/Microsoft/Office365/com.microsoft.Office365.plist"
 	O365SUBMAIN="$O365PRODUCT/com.microsoft.Office365.plist"
@@ -29,7 +29,7 @@ function SetConstants {
 	O365SUBMAINB="$O365PRODUCT/com.microsoft.Office365V2.plist"
 	O365SUBBAK1B="$O365PRODUCT/com.microsoft.O4kTOBJ0M5ITQxATLEJkQ40SNwQDNtQUOxATL1YUNxQUO2E0e.plist"
 	O365SUBBAK2B="$O365PRODUCT/O4kTOBJ0M5ITQxATLEJkQ40SNwQDNtQUOxATL1YUNxQUO2E0e"
-	REGISTRY="$HOME/Library/Group Containers/UBF8T346G9.Office/MicrosoftRegistrationDB.reg"
+	REGISTRY="$O365PRODUCT/MicrosoftRegistrationDB.reg"
 	VNEXTLICENSEPATH="$O365PRODUCT/Licenses"
 	VNEXTPERPETUALLICENSEPATH="/Library/Microsoft/Office/Licenses"
 }
@@ -46,13 +46,12 @@ GetHomeFolder() {
 	fi
 }
 
-
 # Shows tool usage and parameters
 ShowUsage() {
 	echo $TOOL_NAME - $TOOL_VERSION
-	echo "Purpose: Removes current Office 365/2019/2016 for Mac activation license and returns apps to unlicensed state"
-	echo "Usage: $0 [--All] [--DetectOnly] [--O365] [--Volume] [--ForceClose] [--User] [--JamfUser]"
-	echo "Example: $0 --All --ForceClose"
+	echo "Purpose: Removes current Office 365/2021/2019/2016 for Mac activation license and returns apps to unlicensed state"
+	echo "Usage: ${(%):-%x} [--All] [--DetectOnly] [--O365] [--Volume] [--ForceClose] [--User] [--JamfUser]"
+	echo "Example: ${(%):-%x} --All --ForceClose"
 	echo
 	exit 0
 }
@@ -148,22 +147,22 @@ RemoveFlightData() {
 # Check that all licensed applications are not running
 CheckRunning() {
 	OPENAPPS=0
-	WORDRUNSTATE=$(CheckLaunchState "$WORD2016PATH")
+	WORDRUNSTATE=$(CheckLaunchState "$WORDAPPPATH")
 	if [ "$WORDRUNSTATE" = "1" ]; then
 		OPENAPPS=$(($OPENAPPS + 1))
 		echo "ERROR: Word must be closed before license files can be removed."
 	fi
-	EXCELRUNSTATE=$(CheckLaunchState "$EXCEL2016PATH")
+	EXCELRUNSTATE=$(CheckLaunchState "$EXCELAPPPATH")
 	if [ "$EXCELRUNSTATE" = "1" ]; then
 		OPENAPPS=$(($OPENAPPS + 1))
 		echo "ERROR: Excel must be closed before license files can be removed."
 	fi
-	POWERPOINTRUNSTATE=$(CheckLaunchState "$POWERPOINT2016PATH")
+	POWERPOINTRUNSTATE=$(CheckLaunchState "$POWERPOINTAPPPATH")
 	if [ "$POWERPOINTRUNSTATE" = "1" ]; then
 		OPENAPPS=$(($OPENAPPS + 1))
 		echo "ERROR: PowerPoint must be closed before license files can be removed."
 	fi
-	OUTLOOKRUNSTATE=$(CheckLaunchState "$OUTLOOK2016PATH")
+	OUTLOOKRUNSTATE=$(CheckLaunchState "$OUTLOOKAPPPATH")
 	if [ "$OUTLOOKRUNSTATE" = "1" ]; then
 		OPENAPPS=$(($OPENAPPS + 1))
 		echo "ERROR: Outlook must be closed before license files can be removed."
@@ -191,10 +190,10 @@ ForceTerminate() {
 
 # Force quit all Office apps that integrate with licensing
 ForceQuitApps() {
-	ForceTerminate "$WORD2016PATH"
-	ForceTerminate "$EXCEL2016PATH"
-	ForceTerminate "$POWERPOINT2016PATH"
-	ForceTerminate "$OUTLOOK2016PATH"
+	ForceTerminate "$WORDAPPPATH"
+	ForceTerminate "$EXCELAPPPATH"
+	ForceTerminate "$POWERPOINTAPPPATH"
+	ForceTerminate "$OUTLOOKAPPPATH"
 }
 
 # Checks to see if a volume license file is present
@@ -254,28 +253,33 @@ PerpetualLicenseType() {
 
 # Checks to see if an O365 subscription license file is present
 DetectO365License() {
-	if [ -f "$O365SUBMAIN" ] || [ -f "$O365SUBBAK1" ] || [ -f "$O365SUBBAK2" ] || [ -f "$O365SUBMAINB" ] || [ -f "$O365SUBBAK1B" ] || [ -f "$O365SUBBAK2B" ] || [ -e "$VNEXTLICENSEPATH" ]; then
+	if [ -f "$O365SUBMAIN" ] || [ -f "$O365SUBBAK1" ] || [ -f "$O365SUBBAK2" ] || [ -f "$O365SUBMAINB" ] || [ -f "$O365SUBBAK1B" ] || [ -f "$O365SUBBAK2B" ] || [ -n "$( DetectIfUserHasSignedIn )" ]; then
 		echo "1"
 	else
 		echo "0"
 	fi
 }
 
+# Checks to see if a user has signed into Office
+# In older versions of the Office Suite, this directory would exist even before logging in.
+# That said, this check isn't completely reliable as the directory and license file's contents do not change if the user has signed out of Office.
+DetectIfUserHasSignedIn() {
+	/usr/bin/find "$VNEXTLICENSEPATH" -type f ! -iname ".DS_Store" 2&> /dev/null
+}
+
 # Removes the volume license file
 RemovePerpetualLicense() {
 	VLREADYTOREMOVE=$(DetectPerpetualLicense)
 	if [ "$VLREADYTOREMOVE" = "1" ]; then
-		PRIVS=$(GetSudo)
-		if [ "$PRIVS" = "1" ]; then
-			echo "1"
-			return
-		else
+		if [ -f "$PERPETUALLICENSE" ]; then
 			sudo rm -f "$PERPETUALLICENSE"
 			if [ "$?" = "0" ]; then
 				echo "0"
 			else
 				echo "1"
 			fi
+		fi
+		if [ -f "$VNEXTPERPETUALLICENSEPATH" ]; then
 			sudo rm -f "$VNEXTPERPETUALLICENSEPATH"
 			if [ "$?" = "0" ]; then
 				echo "0"
@@ -313,7 +317,7 @@ RemoveO365License() {
 		if [ -f "$SHAREDLICENSE" ]; then
 			rm -f "$SHAREDLICENSE"
 		fi
-		if [ -e "$VNEXTLICENSEPATH" ]; then
+		if [ -n "$( DetectIfUserHasSignedIn )" ]; then
 			rm -rf "$VNEXTLICENSEPATH"
 		fi
 		O365VERIFYREMOVAL=$(DetectO365License)
@@ -525,6 +529,11 @@ GetSudo() {
 	fi
 }
 
+# Detect Application Bundle Version
+GetAppVersion() {
+	/usr/bin/defaults read "${1}/Contents/Info.plist" CFBundleShortVersionString
+}
+
 # Evaluate command-line arguments
 if [[ $# = 0 ]]; then
 	ShowUsage
@@ -563,8 +572,8 @@ else
 		shift # past argument
 		;;
 		--JamfUser)
-		# 	Used to remove Office 365/2019/2016 activation for Jamf script. Example Self Service script.
-		#  Parameter 4: --All, Parameter 5: --ForceClose, Parameter 6: --JamfUser
+		# Used to remove Office 365/2021/2019/2016 activation for Jamf script. Example Self Service script.
+		# Parameter 4: --All, Parameter 5: --ForceClose, Parameter 6: --JamfUser
 		USER=$3
 		GetHomeFolder "$USER"
 		shift # past argument
@@ -575,6 +584,16 @@ fi
 
 ## Main
 SetConstants
+
+# Determine which Office Suite version is installed
+declare -a APPVERSIONS
+for app in "$WORDAPPPATH" "$EXCELAPPPATH" "$POWERPOINTAPPPATH" "$OUTLOOKAPPPATH"
+do
+	if [ -e "${app}" ]; then
+		APPVERSIONS+=$(GetAppVersion "${app}")
+	fi
+done
+
 # Check first for detection mode
 if [ $DETECT ]; then
 	VLPRESENT=$(DetectPerpetualLicense)
@@ -591,36 +610,56 @@ if [ $DETECT ]; then
 	else
 		echo "An Office 365 Subscription license was NOT detected."
 	fi
-	
+
 	if [ "$VLPRESENT" = "1" ] && [ "$O365PRESENT" = "1" ]; then
 		echo "WARNING: Both volume and Office 365 Subscription licenses were detected."
-		echo "If the Subscription license is valid, it will be prioritized over the volume license."
+
+		VERSIONCHECK=$((( ${${(@O)APPVERSIONS}[1]} >= 16.50 )) 2&> /dev/null; echo $?)
+
+		if [ $VERSIONCHECK = 0 ]; then
+			# Modern priority, v16.50 or newer
+			echo "If the Subscription license is valid, it will be prioritized over the volume license."
+		elif [ $VERSIONCHECK = 1 ]; then
+			# Legacy priority, v16.49 or older
+			echo "Only the volume license will be used."
+		elif [ $VERSIONCHECK = 2 ]; then
+			# No Office app bundles found at the expected locations
+			# Reply with modern priority verbiage
+			echo "WARNING: Unable to determine Office Suite version."
+			echo "If the Subscription license is valid, it will be prioritized over the volume license."
+		fi
 	fi
 	exit 0
 fi
 
 # Remove volume license
 if [ $REMOVEVL ]; then
-	VLPRESENT=$(DetectPerpetualLicense)
-	if [ "$VLPRESENT" = "1" ]; then
-		if [ $FORCECLOSE ]; then
-			ForceQuitApps
-		else
-			CheckRunning
-		fi
-		REMOVEVLFILES=$(RemovePerpetualLicense)
-		if [ "$REMOVEVLFILES" = "0" ]; then
-			SudoResetFRE
-			echo "The volume license files were removed successfully."
-		elif [ "$REMOVEVLFILES" = "2" ]; then
-			echo "WARNING: No volume license files were present"
-		else
-			echo "ERROR: The volume license files could NOT be removed. Try using the sudo command to elevate permissions."
-			exit 1
-		fi
-		REMOVEVLRECEIPT=$(RemoveReceipt "com.microsoft.pkg.licensing.volume")
+	PRIVS=$(GetSudo)
+	if [ "$PRIVS" = "1" ]; then
+		echo "1"
+		return
 	else
-		echo "WARNING: No volume license files were present"
+		VLPRESENT=$(DetectPerpetualLicense)
+		if [ "$VLPRESENT" = "1" ]; then
+			if [ $FORCECLOSE ]; then
+				ForceQuitApps
+			else
+				CheckRunning
+			fi
+				REMOVEVLFILES=$(RemovePerpetualLicense)
+				if [ "$REMOVEVLFILES" = "0" ]; then
+					SudoResetFRE
+					echo "The volume license files were removed successfully."
+				elif [ "$REMOVEVLFILES" = "2" ]; then
+					echo "WARNING: No volume license files were present"
+				else
+					echo "ERROR: The volume license files could NOT be removed. Try using the sudo command to elevate permissions."
+					exit 1
+				fi
+				REMOVEVLRECEIPT=$(RemoveReceipt "com.microsoft.pkg.licensing.volume")
+		else
+			echo "WARNING: No volume license files were present"
+		fi
 	fi
 fi
 
